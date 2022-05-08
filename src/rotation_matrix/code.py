@@ -1,16 +1,55 @@
+# -*- coding: utf-8 -*-
+
 '''旋转矩阵方法集
 
 旋转矩阵是最基本的姿态表达方法。本文件包含了以下与旋转矩阵有关的算法：
 
-1. 构造一个最基本的旋转矩阵，并对其进行基本的运算
-2. 表达姿态的方式多种多样，我们总是需要将它们与旋转矩阵相互转换，本文件提供了这样的方法
+1. 欧拉角与旋转矩阵互相转换
+2. 四元数与旋转矩阵互相转换
 '''
 
 import numpy as np
-from math_utils import *
+import math
 
 # 取消科学计数法
 np.set_printoptions(suppress=True, precision=4)
+
+########################### 基础数学工具 ###########################
+
+ZERO = 1e-6     # 浮点数误差阈值
+PI = math.pi    # 圆周率
+TO_DEG = 180/PI  # 弧度转角度
+TO_RAD = PI/180  # 角度转弧度
+
+
+def sind(angle):
+    # 角度正弦函数
+    return math.sin(angle*TO_RAD)
+
+
+def cosd(angle):
+    # 角度余弦函数
+    return math.cos(angle*TO_RAD)
+
+
+def sin(angle):
+    # 弧度正弦函数
+    return math.sin(angle)
+
+
+def cos(angle):
+    # 弧度正弦函数
+    return math.cos(angle)
+
+
+def atan2(y, x):
+    # 反正切函数
+    return math.atan2(y, x)
+
+
+def sqrt(x):
+    # 开平方函数
+    return math.sqrt(x)
 
 
 ########################### 欧拉角与旋转矩阵互转 ###########################
@@ -18,6 +57,7 @@ np.set_printoptions(suppress=True, precision=4)
 
 def euler_to_rotmat(euler):
     return np.dot(rotmat_z(euler[2]), np.dot(rotmat_y(euler[1]), rotmat_x(euler[0])))
+
 
 def rotmat_to_euler(rot):
     sy = math.sqrt(rot[0, 0] * rot[0, 0] + rot[1, 0] * rot[1, 0])
@@ -58,6 +98,7 @@ def quater_to_rotmat(quater):
     return np.array([[-1+2*x*x+2*t*t, 2*x*y-2*z*t, 2*x*z+2*y*t],
                      [2*x*y+2*z*t, -1+2*y*y+2*t*t, 2*y*z-2*x*t],
                      [2*x*z-2*y*t, 2*y*z+2*x*t, -1+2*z*z+2*t*t]])
+
 
 def rotmat_to_quater(rotmat):
     r = rotmat
