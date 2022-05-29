@@ -18,8 +18,8 @@
     - [旋转矩阵方法集](#旋转矩阵方法集)
 - 运动学
     - [DH参数表可视化](#DH参数表可视化)
-- 路径规划
-    - [位姿线性插补](#位姿线性插补)
+- 几何学
+    - [平面碰撞检测](#平面碰撞检测)
 
 ## 刚体运动
 
@@ -81,7 +81,12 @@ dh_view(dh_list, dh_type="mdh")
 
 ![dh.png](./src/dh_view/dh.png)
 
+## 几何学
 
-## 路径规划
+### 平面碰撞检测
 
-### 位姿线性插补
+[查看实例](./src/collision_detection)
+
+对于空间中任意两个凸多边形，可以采用一种名为**分离轴测试**（Separating Axis Test）的方法进行碰撞检测。本文件包含一组矩形的例子：
+
+![dh.png](./src/collision_detection/collision_detection.png)
