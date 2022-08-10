@@ -65,6 +65,7 @@ def rotmat_z(angle):
 def euler_to_rotmat(euler):
     return np.dot(rotmat_z(euler[2]), np.dot(rotmat_y(euler[1]), rotmat_x(euler[0])))
 
+
 def rotmat_to_euler(rot):
     sy = math.sqrt(rot[0, 0] * rot[0, 0] + rot[1, 0] * rot[1, 0])
     singular = (sy < 1e-6)
@@ -84,26 +85,31 @@ def pose_to_transmat(pose):
     R = euler_to_rotmat([pose[3], pose[4], pose[5]])
     return np.r_[np.c_[R, p], [[0, 0, 0, 1]]]
 
+
 def transmat_to_pose(transmat):
     r, p = transmat_to_rp(transmat)
     euler = rotmat_to_euler(r)
     return np.array([p[0], p[1], p[2], euler[0], euler[1], euler[2]])
 
+
 def transmat_to_rp(transmat):
     transmat = np.array(transmat)
     return transmat[0:3, 0:3], transmat[0:3, 3]
 
+
 def transmat_inv(transmat):
     r, p = transmat_to_rp(transmat)
     rt = np.array(r).T
-    return np.r_[np.c_[rt, -np.dot(rt, p)], [[0,0,0,1]]]
+    return np.r_[np.c_[rt, -np.dot(rt, p)], [[0, 0, 0, 1]]]
 
 # 判断点是否在给定凸多边形区域内
+
+
 def point_is_in_area(point, area_p_list):
     area_vec_list = []
     size = len(area_p_list)
     for i in range(size):
-        area_vec_list.append(area_p_list[(i+1)%size]-area_p_list[i])
+        area_vec_list.append(area_p_list[(i+1) % size]-area_p_list[i])
     # 对于边界的每条边
     for i in range(size):
         ws_p_vec = point-area_p_list[i]
@@ -114,6 +120,8 @@ def point_is_in_area(point, area_p_list):
     return True
 
 # 判断多边形1是否在多边形2内部
+
+
 def area1_is_in_area2(area_p_list_1, area_p_list_2):
     # area_vec_list_1 = []
     size_1 = len(area_p_list_1)
@@ -121,21 +129,23 @@ def area1_is_in_area2(area_p_list_1, area_p_list_2):
     # for i in range(size_1):
     #     area_vec_list_1.append(area_p_list_1[(i+1)%size_1]-area_p_list_1[i])
     for i in range(len(area_p_list_1)):
-            if not point_is_in_area(area_p_list_1[i], area_p_list_2):
-                return False
+        if not point_is_in_area(area_p_list_1[i], area_p_list_2):
+            return False
     return True
 
 # 分离轴测试——判断两个多边形是否相交
+
+
 def separating_axis_test(area_p_list_1, area_p_list_2):
     area_vec_list_1 = []
     size_1 = len(area_p_list_1)
     for i in range(size_1):
-        area_vec_list_1.append(area_p_list_1[(i+1)%size_1]-area_p_list_1[i])
+        area_vec_list_1.append(area_p_list_1[(i+1) % size_1]-area_p_list_1[i])
 
     area_vec_list_2 = []
     size_2 = len(area_p_list_2)
     for i in range(size_2):
-        area_vec_list_2.append(area_p_list_2[(i+1)%size_2]-area_p_list_2[i])
+        area_vec_list_2.append(area_p_list_2[(i+1) % size_2]-area_p_list_2[i])
 
     for i in range(size_1):
         for j in range(size_2):
@@ -159,6 +169,7 @@ def separating_axis_test(area_p_list_1, area_p_list_2):
 
 ########################### main ###########################
 
+
 def create_new_object():
     return [
         random.random()*140-20,
@@ -168,6 +179,7 @@ def create_new_object():
         0,
         random.random()*360-180
     ]
+
 
 if __name__ == '__main__':
 
@@ -206,13 +218,13 @@ if __name__ == '__main__':
     # 工具顶点集
     t_p_list = [t_A, t_B, t_C, t_D]
 
-    fig = plt.figure(figsize=(12, 12), dpi=300)
-
-    plt.xlim(-30,130)
-    plt.ylim(-50,110)
-
+    fig = plt.figure(figsize=(8, 4.5), dpi=300)
+    plt.xlim(-30, 130)
+    plt.ylim(-50, 110)
+    ax = plt.gca()
+    ax.set_aspect(1)
     # 创建工件
-    for k in range(40):
+    for k in range(20):
         # 工具末端在工作空间的位置
         ws_t = create_new_object()
         trans_ws_t = pose_to_transmat(ws_t)
@@ -229,24 +241,24 @@ if __name__ == '__main__':
                 collision = True
 
         for i in range(len(ws_p_list)-1):
-            plt.plot([ws_p_list[i][0], ws_p_list[i+1][0]], 
-                    [ws_p_list[i][1], ws_p_list[i+1][1]], 
-                    linestyle='--', color='g')
-        plt.plot([ws_p_list[i+1][0], ws_p_list[0][0]], 
-                    [ws_p_list[i+1][1], ws_p_list[0][1]], 
-                    linestyle='--', color='g')
+            plt.plot([ws_p_list[i][0], ws_p_list[i+1][0]],
+                     [ws_p_list[i][1], ws_p_list[i+1][1]],
+                     linestyle='--', color='#98c379')
+        plt.plot([ws_p_list[i+1][0], ws_p_list[0][0]],
+                 [ws_p_list[i+1][1], ws_p_list[0][1]],
+                 linestyle='--', color='#98c379')
 
         if collision:
-            color_obj = 'r'
+            COLOR_OBJ = '#d46c75'
         else:
-            color_obj = 'b'
+            COLOR_OBJ = '#61afef'
 
         for i in range(len(ws_t_p_list)-1):
-            plt.plot([ws_t_p_list[i][0], ws_t_p_list[i+1][0]], 
-                    [ws_t_p_list[i][1], ws_t_p_list[i+1][1]], 
-                    linestyle='-', color=color_obj)
-        plt.plot([ws_t_p_list[i+1][0], ws_t_p_list[0][0]], 
-                    [ws_t_p_list[i+1][1], ws_t_p_list[0][1]], 
-                    linestyle='-', color=color_obj)
+            plt.plot([ws_t_p_list[i][0], ws_t_p_list[i+1][0]],
+                     [ws_t_p_list[i][1], ws_t_p_list[i+1][1]],
+                     linestyle='-', color=COLOR_OBJ)
+        plt.plot([ws_t_p_list[i+1][0], ws_t_p_list[0][0]],
+                 [ws_t_p_list[i+1][1], ws_t_p_list[0][1]],
+                 linestyle='-', color=COLOR_OBJ)
 
     plt.savefig("src/collision_detection/collision_detection.png")

@@ -21,35 +21,12 @@ PI = math.pi    # 圆周率
 TO_DEG = 180/PI  # 弧度转角度
 TO_RAD = PI/180  # 角度转弧度
 
-
-def sind(angle):
-    # 角度正弦函数
-    return math.sin(angle*TO_RAD)
-
-
-def cosd(angle):
-    # 角度余弦函数
-    return math.cos(angle*TO_RAD)
-
-
-def sin(angle):
-    # 弧度正弦函数
-    return math.sin(angle)
-
-
-def cos(angle):
-    # 弧度正弦函数
-    return math.cos(angle)
-
-
-def atan2(y, x):
-    # 反正切函数
-    return math.atan2(y, x)
-
-
-def sqrt(x):
-    # 开平方函数
-    return math.sqrt(x)
+sind = lambda angle : math.sin(angle*TO_RAD)
+cosd = lambda angle : math.cos(angle*TO_RAD)
+sin = lambda angle : math.sin(angle*TO_RAD)
+cos = lambda angle : math.cos(angle*TO_RAD)
+atan2 = lambda angle : math.atan2(angle*TO_RAD)
+sqrt = lambda angle : math.sqrt(angle*TO_RAD)
 
 
 ########################### 欧拉角与旋转矩阵互转 ###########################
