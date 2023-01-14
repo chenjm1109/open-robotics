@@ -50,62 +50,75 @@ def prase_mdh(mdh_list):
 
 
 def dh_view(dh_list, dh_type="mdh"):
+    dh_list = np.array(dh_list)
     if("mdh" == dh_type):
         T_list = prase_mdh(dh_list)
     else:
         T_list = prase_dh(dh_list)
 
-    fig = plt.figure(dpi=100, figsize=(8, 4.5))
-    ax = fig.add_subplot(111, projection='3d')
+    fig = plt.figure(dpi=100, figsize=(16, 9))
+    ax = plt.axes(projection='3d')
     ax.view_init(elev=20., azim=45.)
     ax.set_xlabel("x(m)")
     ax.set_ylabel("y(m)")
     ax.set_zlabel("z(m)")
-    ax.set_xlim3d(-100, 100)
-    ax.set_ylim3d(-100, 100)
-    ax.set_zlim3d(0, 200)
 
-    scale = 30
-
+    xs = T_list[:, 0, 3]
+    ys = T_list[:, 1, 3]
+    zs = T_list[:, 2, 3]
+    scale = (np.sum(dh_list[:, 0]) + np.sum(dh_list[:, 2]))/10
     for i in range(T_list.shape[0]-1):
         ax.plot([T_list[i, 0, 3], T_list[i+1, 0, 3]],
                 [T_list[i, 1, 3], T_list[i+1, 1, 3]],
                 [T_list[i, 2, 3], T_list[i+1, 2, 3]],
-                color="#555", linewidth=3)
+                color="gray", linewidth=3)
     for i in range(T_list.shape[0]):
-        ax.plot([T_list[i, 0, 3], T_list[i, 0, 3]+T_list[i, 0, 0]*scale],
-                [T_list[i, 1, 3], T_list[i, 1, 3]+T_list[i, 1, 0]*scale],
-                [T_list[i, 2, 3], T_list[i, 2, 3]+T_list[i, 2, 0]*scale],
-                color="#b85450", linewidth=3)
-        ax.plot([T_list[i, 0, 3], T_list[i, 0, 3]+T_list[i, 0, 1]*scale],
-                [T_list[i, 1, 3], T_list[i, 1, 3]+T_list[i, 1, 1]*scale],
-                [T_list[i, 2, 3], T_list[i, 2, 3]+T_list[i, 2, 1]*scale],
-                color="#008000", linewidth=3)
-        ax.plot([T_list[i, 0, 3], T_list[i, 0, 3]+T_list[i, 0, 2]*scale],
-                [T_list[i, 1, 3], T_list[i, 1, 3]+T_list[i, 1, 2]*scale],
-                [T_list[i, 2, 3], T_list[i, 2, 3]+T_list[i, 2, 2]*scale],
-                color="#9cdcfe", linewidth=3)
-    
-    plt.savefig('./src/dh_view/dh.png')
+        ax.quiver(xs[i], ys[i], zs[i], 
+                  T_list[i, 0, 0]*scale, 
+                  T_list[i, 1, 0]*scale, 
+                  T_list[i, 2, 0]*scale,
+                  color='r', arrow_length_ratio=0.2)
+        ax.quiver(xs[i], ys[i], zs[i], 
+                  T_list[i, 0, 1]*scale, 
+                  T_list[i, 1, 1]*scale, 
+                  T_list[i, 2, 1]*scale,
+                  color='g', arrow_length_ratio=0.2)
+        ax.quiver(xs[i], ys[i], zs[i], 
+                  T_list[i, 0, 2]*scale, 
+                  T_list[i, 1, 2]*scale, 
+                  T_list[i, 2, 2]*scale,
+                  color='b', arrow_length_ratio=0.2)
+
+    # 自动调整坐标轴范围
+    ax.autoscale_view(tight=True)
+
+    # 设置坐标轴比例
+    ax.set_aspect('equal', 'box')
+
     plt.show()
 
 
-if __name__ == "__main__":
-    # ## Scara
-    # # MDH参数表  a     alpha       d       theta
-    # dh_list = [[ 0.0,    0.0,    250.0,  20.0],
-    #             [ 150.0,  0,    0.0,    -20.0],
-    #             [ 150.0, 180,    150.0,   0.0],
-    #             [ 0.0,   0.0,    0.0,    20.0]]
-    # dh_view(dh_list, dh_type="mdh")
+def test_scara_mdh():
+    # Scara
+    # MDH参数表  a     alpha       d       theta
+    dh_list = [[0.0,    0.0,    250.0,  20.0],
+               [150.0,  0,    0.0,    -20.0],
+               [150.0, 180,    150.0,   0.0],
+               [0.0,   0.0,    0.0,    20.0]]
+    dh_view(dh_list, dh_type="mdh")
 
-    # # DH参数表   a     alpha       d       theta
-    # dh_list = [[ 150,    0,    250,    20.0],
-    #            [ 150,    180,    0.0,    -20.0],
-    #            [ 0.0,    0.0,    150.0,   0.0],
-    #            [ 0.0,    0.0,    0.0,    20.0]]
-    # dh_view(dh_list, dh_type="dh")
 
+def test_scara_dh():
+    # Scara
+    # DH参数表   a     alpha       d       theta
+    dh_list = [[150,    0,    250,    20.0],
+               [150,    180,    0.0,    -20.0],
+               [0.0,    0.0,    150.0,   0.0],
+               [0.0,    0.0,    0.0,    20.0]]
+    dh_view(dh_list, dh_type="dh")
+
+
+def test_6axis_mdh():
     # 标准六轴
     # MDH参数表  a   alpha    d   theta
     dh_list = [[0,     0,     0,    0],
@@ -116,11 +129,21 @@ if __name__ == "__main__":
                [0,   -90,    50,   30]]
     dh_view(dh_list, dh_type="mdh")
 
-    # # DH参数表   a      alpha       d       theta
-    # dh_list = [[ 50.0,   -90.0,    242,     0.0],
-    #            [ 225.0,   0.0,     0.0,    -90.0],
-    #            [ 50.0,   -90.0,    0.0,     0.0],
-    #            [ 0.0,     90.0,  228.86,   0.0],
-    #            [ 0.0,    -90.0,    0.0,     0.0],
-    #            [ 0.0,     0.0,    50.0,    0.0]]
-    # dh_view(dh_list, dh_type="dh")
+
+def test_6axis_dh():
+    # 标准六轴
+    # DH参数表   a      alpha       d       theta
+    dh_list = [[50.0,   -90.0,    242,     0.0],
+               [225.0,   0.0,     0.0,    -90.0],
+               [50.0,   -90.0,    0.0,     0.0],
+               [0.0,     90.0,  228.86,   0.0],
+               [0.0,    -90.0,    0.0,     0.0],
+               [0.0,     0.0,    50.0,    0.0]]
+    dh_view(dh_list, dh_type="dh")
+
+
+if __name__ == "__main__":
+    test_scara_mdh()
+    # test_scara_dh()
+    # test_6axis_mdh()
+    # test_6axis_dh()
