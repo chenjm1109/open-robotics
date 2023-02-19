@@ -1,4 +1,17 @@
 import numpy as np
+import libs.modern_robotics as mr
+
+def trans_to_point(trans):
+    trans = np.array(trans)
+    rotmat, posvec = mr.TransToRp(trans)
+    euler = matrix_to_euler(rotmat)
+    return np.r_[posvec, euler]
+
+def point_to_trans(point):
+    point = np.array(point.copy())
+    posvec = point[0:3]
+    rotmat = euler_to_matrix(point[3:6])
+    return mr.RpToTrans(rotmat, posvec).copy()
 
 
 def matrix_to_euler(matrix: np.ndarray) -> np.ndarray:
