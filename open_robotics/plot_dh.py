@@ -2,8 +2,12 @@
 
 import numpy as np
 import math
+import matplotlib
 import matplotlib.pyplot as plt
+
 from mpl_toolkits.mplot3d.axes3d import Axes3D
+
+matplotlib.rcParams['font.family'] = 'Microsoft YaHei'
 
 np.set_printoptions(suppress=True)
 
@@ -34,68 +38,117 @@ def prase_dh(dh_list):
     return T_list
 
 
-def prase_mdh(mdh_list):
+def prase_mdh(mdh_list, joint):
     mdh_list = np.array(mdh_list)
     T_list = np.zeros((mdh_list.shape[0]+1, 4, 4))
     T_list[0] = np.eye(4)
     for i in range(mdh_list.shape[0]):
-        a, ap, d, t = mdh_list[i, :]
+        joint_type, a, ap, d, t = mdh_list[i, :]
+        if joint_type == 0:
+            t += joint[i]
+        elif joint_type == 1:
+            d += joint[i]
         T_trans = [[cos(t),        -sin(t),          0,        a],
                    [sin(t)*cos(ap), cos(t)*cos(ap), -sin(ap), -d*sin(ap)],
                    [sin(t)*sin(ap), cos(t)*sin(ap),  cos(ap),  d*cos(ap)],
                    [0,              0,               0,        1]]
         T_list[i+1] = np.dot(T_list[i], T_trans)
-
     return T_list
 
 
-def dh_view(dh_list, dh_type="mdh"):
-    dh_list = np.array(dh_list)
-    if("mdh" == dh_type):
-        T_list = prase_mdh(dh_list)
-    else:
-        T_list = prase_dh(dh_list)
+LIGHT_MODE = True
 
-    fig = plt.figure(dpi=100, figsize=(16, 9))
-    ax = plt.axes(projection='3d')
-    ax.view_init(elev=20., azim=45.)
+OR_RED = "#EF6665" if LIGHT_MODE else "#B8515F"
+OR_GREEN = "#91CD76" if LIGHT_MODE else "#5CB789"
+OR_BLUE = "#546FC6" if LIGHT_MODE else "#4382D4"
+OR_ORANGE = "#fac958" if LIGHT_MODE else "#B69F50"
+OR_BORDER = "#B5BCCF"
+OR_TEXT = "#455377" if LIGHT_MODE else "#B5BCCF"
+OR_BACKGROUND = "#f3f4fa" if LIGHT_MODE else "#100C2A"
+
+
+def plot_cylinder(x, y, z, r, h, ax):
+    # 创建圆柱体
+    z_cylinder = np.linspace(z-h/2, z+h/2, 100)
+    theta = np.linspace(0, 2*np.pi, 100)
+    theta_grid, z_grid = np.meshgrid(theta, z_cylinder)
+    x_grid = x + r*np.cos(theta_grid)
+    y_grid = y + r*np.sin(theta_grid)
+    ax.plot_surface(x_grid, y_grid, z_grid, color='r')
+
+
+def dh_view(dh_list, joint, ax):
+    dh_list = np.array(dh_list)
+    T_list = prase_mdh(dh_list, joint)
+
     ax.set_xlabel("x(m)")
     ax.set_ylabel("y(m)")
     ax.set_zlabel("z(m)")
+    max_size = (dh_list[:, 1].sum()+dh_list[:, 3].sum())*0.75
+    ax.set_xlim([-max_size, max_size])
+    ax.set_ylim([-max_size, max_size])
+    ax.set_zlim([-max_size, max_size])
+
+    ax.patch.set_facecolor(OR_BACKGROUND)
+
+    # 坐标轴线
+    ax.w_xaxis.line.set_color(OR_BORDER)
+    ax.w_yaxis.line.set_color(OR_BORDER)
+    ax.w_zaxis.line.set_color(OR_BORDER)
+
+    # 坐标轴标签和刻度
+    ax.set_xlabel('X 轴', color=OR_TEXT)
+    ax.set_ylabel('Y 轴', color=OR_TEXT)
+    ax.set_zlabel('Z 轴', color=OR_TEXT)
+    ax.tick_params(axis='x', colors=OR_TEXT)
+    ax.tick_params(axis='y', colors=OR_TEXT)
+    ax.tick_params(axis='z', colors=OR_TEXT)
+
+    # 坐标平面
+    ax.xaxis.pane.set_facecolor(OR_BACKGROUND)
+    ax.yaxis.pane.set_facecolor(OR_BACKGROUND)
+    ax.zaxis.pane.set_facecolor(OR_BACKGROUND)
+
+    # 网格
+    ax.xaxis._axinfo["grid"]['color'] = OR_BORDER
+    ax.yaxis._axinfo["grid"]['color'] = OR_BORDER
+    ax.zaxis._axinfo["grid"]['color'] = OR_BORDER
 
     xs = T_list[:, 0, 3]
     ys = T_list[:, 1, 3]
     zs = T_list[:, 2, 3]
-    scale = (np.sum(dh_list[:, 0]) + np.sum(dh_list[:, 2]))/10
+    scale = max_size/5
     for i in range(T_list.shape[0]-1):
         ax.plot([T_list[i, 0, 3], T_list[i+1, 0, 3]],
                 [T_list[i, 1, 3], T_list[i+1, 1, 3]],
                 [T_list[i, 2, 3], T_list[i+1, 2, 3]],
-                color="gray", linewidth=3)
+                color=OR_ORANGE, linewidth=5)
     for i in range(T_list.shape[0]):
-        ax.quiver(xs[i], ys[i], zs[i], 
-                  T_list[i, 0, 0]*scale, 
-                  T_list[i, 1, 0]*scale, 
-                  T_list[i, 2, 0]*scale,
-                  color='r', arrow_length_ratio=0.2)
-        ax.quiver(xs[i], ys[i], zs[i], 
-                  T_list[i, 0, 1]*scale, 
-                  T_list[i, 1, 1]*scale, 
-                  T_list[i, 2, 1]*scale,
-                  color='g', arrow_length_ratio=0.2)
-        ax.quiver(xs[i], ys[i], zs[i], 
-                  T_list[i, 0, 2]*scale, 
-                  T_list[i, 1, 2]*scale, 
-                  T_list[i, 2, 2]*scale,
-                  color='b', arrow_length_ratio=0.2)
+        if i != T_list.shape[0]-1:
+            actual_scale = scale*0.5
+        else:
+            actual_scale = scale
+        ax.quiver(xs[i], ys[i], zs[i],
+                  T_list[i, 0, 0]*actual_scale,
+                  T_list[i, 1, 0]*actual_scale,
+                  T_list[i, 2, 0]*actual_scale,
+                  color=OR_RED, arrow_length_ratio=0.5)
+        ax.quiver(xs[i], ys[i], zs[i],
+                  T_list[i, 0, 1]*actual_scale,
+                  T_list[i, 1, 1]*actual_scale,
+                  T_list[i, 2, 1]*actual_scale,
+                  color=OR_GREEN, arrow_length_ratio=0.5)
+        ax.quiver(xs[i], ys[i], zs[i],
+                  T_list[i, 0, 2]*actual_scale,
+                  T_list[i, 1, 2]*actual_scale,
+                  T_list[i, 2, 2]*actual_scale,
+                  color=OR_BLUE, arrow_length_ratio=0.5)
 
-    # 自动调整坐标轴范围
-    ax.autoscale_view(tight=True)
+    # # 自动调整坐标轴范围
+    # ax.autoscale_view(tight=True)
 
     # 设置坐标轴比例
     ax.set_aspect('equal', 'box')
-
-    plt.show()
 
 
 def test_scara_mdh():

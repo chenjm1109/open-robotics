@@ -617,6 +617,7 @@ def FKinSpace(M, Slist, thetalist):
                   [0, 0, -1, 1.68584073],
                   [0, 0,  0,          1]])
     """
+    
     T = np.array(M)
     for i in range(len(thetalist) - 1, -1, -1):
         T = np.dot(MatrixExp6(VecTose3(np.array(Slist)[:, i] * thetalist[i])), T)
