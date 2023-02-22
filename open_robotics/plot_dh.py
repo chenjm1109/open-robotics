@@ -76,8 +76,33 @@ def plot_cylinder(x, y, z, r, h, ax):
     y_grid = y + r*np.sin(theta_grid)
     ax.plot_surface(x_grid, y_grid, z_grid, color='r')
 
-
-def dh_view(dh_list, joint, ax):
+def plot_joint_traj_animation(dh_list, joint_traj, time_list):
+    node_num = len(joint_traj)
+    fig = plt.figure(dpi=100, figsize=(16, 9), facecolor=OR_BACKGROUND)
+    ax = plt.axes(projection='3d')
+    ax.view_init(elev=20., azim=45.)
+    time_interval = 0.0
+    for i in range(node_num):
+        if i < node_num-1:
+            time_interval += time_list[i+1]-time_list[i]
+        else:
+            time_interval = time_list[-1]
+        if time_interval < 0.05:
+            continue
+        ax.clear()
+        update_robot_pose(dh_list, joint_traj[i], ax)
+        plt.pause(time_interval)
+        time_interval = 0.0
+    plt.show()
+    
+def plot_robot_pose(dh_list, joint):
+    fig = plt.figure(dpi=100, figsize=(16, 9), facecolor=OR_BACKGROUND)
+    ax = plt.axes(projection='3d')
+    ax.view_init(elev=20., azim=45.)
+    update_robot_pose(dh_list, joint, ax)
+    plt.show()
+    
+def update_robot_pose(dh_list, joint, ax):
     dh_list = np.array(dh_list)
     T_list = prase_mdh(dh_list, joint)
 
@@ -151,52 +176,35 @@ def dh_view(dh_list, joint, ax):
     ax.set_aspect('equal', 'box')
 
 
-def test_scara_mdh():
-    # Scara
-    # MDH参数表  a     alpha       d       theta
-    dh_list = [[0.0,    0.0,    250.0,  20.0],
-               [150.0,  0,    0.0,    -20.0],
-               [150.0, 180,    150.0,   0.0],
-               [0.0,   0.0,    0.0,    20.0]]
-    dh_view(dh_list, dh_type="mdh")
+def plot_traj_curve(joint_traj:np.ndarray, time_list:np.ndarray):
+    freedom = joint_traj.shape[1]
+    # 计算速度和加速度
+    velocity = np.diff(joint_traj, axis=0) / np.diff(time_list)[:, None]
+    acceleration = np.diff(velocity, axis=0) / \
+        np.diff(time_list[:-1])[:, None]
 
+    # 绘制坐标、速度和加速度曲线
+    fig, axs = plt.subplots(3, 1, figsize=(8, 8))
+    for i in range(freedom):
+        axs[0].plot(time_list, joint_traj[:, i], label=f"pos {i}")
+        axs[1].plot(time_list[:-1], velocity[:, i],
+                    label=f"vel {i}")
+        axs[2].plot(time_list[:-2], acceleration[:, i],
+                    label=f"acc {i}")
+    axs[0].set_xlabel("时间(s)")
+    axs[0].set_ylabel("关节位置")
+    axs[0].legend(loc='upper left', bbox_to_anchor=(1.0, 1.0))
+    axs[0].grid()
+    axs[1].set_xlabel("时间(s)")
+    axs[1].set_ylabel("关节速度")
+    axs[1].legend(loc='upper left', bbox_to_anchor=(1.0, 1.0))
+    axs[1].grid()
+    axs[2].set_xlabel("时间(s)")
+    axs[2].set_ylabel("关节加速度")
+    axs[2].legend(loc='upper left', bbox_to_anchor=(1.0, 1.0))
+    axs[2].grid()
 
-def test_scara_dh():
-    # Scara
-    # DH参数表   a     alpha       d       theta
-    dh_list = [[150,    0,    250,    20.0],
-               [150,    180,    0.0,    -20.0],
-               [0.0,    0.0,    150.0,   0.0],
-               [0.0,    0.0,    0.0,    20.0]]
-    dh_view(dh_list, dh_type="dh")
+    fig.subplots_adjust(hspace=0.4)
+    fig.tight_layout()
+    plt.show()
 
-
-def test_6axis_mdh():
-    # 标准六轴
-    # MDH参数表  a   alpha    d   theta
-    dh_list = [[0,     0,     0,    0],
-               [50,  -90,     0,  -90],
-               [150,   0,     0,    0],
-               [50,  -90,    40,    0],
-               [0,    90,     0,    0],
-               [0,   -90,    50,   30]]
-    dh_view(dh_list, dh_type="mdh")
-
-
-def test_6axis_dh():
-    # 标准六轴
-    # DH参数表   a      alpha       d       theta
-    dh_list = [[50.0,   -90.0,    242,     0.0],
-               [225.0,   0.0,     0.0,    -90.0],
-               [50.0,   -90.0,    0.0,     0.0],
-               [0.0,     90.0,  228.86,   0.0],
-               [0.0,    -90.0,    0.0,     0.0],
-               [0.0,     0.0,    50.0,    0.0]]
-    dh_view(dh_list, dh_type="dh")
-
-
-if __name__ == "__main__":
-    test_scara_mdh()
-    # test_scara_dh()
-    # test_6axis_mdh()
-    # test_6axis_dh()

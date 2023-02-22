@@ -1,0 +1,20 @@
+axes.prop_cycle: cycler('color', ['4382D4', 'B8515F', '5CB789', 'B69F50', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])
+axes.labelcolor: "B5BCCF"
+axes.titlecolor: "B5BCCF"
+axes.facecolor:"100C2A"
+axes.edgecolor: "B5BCCF"
+
+
+text.color: "B5BCCF"
+
+
+xtick.color: "B5BCCF"
+xtick.labelcolor:"B5BCCF"
+ytick.color: "B5BCCF"
+ytick.labelcolor:"B5BCCF"
+
+grid.color: "B5BCCF"
+
+figure.facecolor: "100C2A"
+
+figure.edgecolor:"100C2A"
