@@ -843,7 +843,7 @@ def IKinSpace(Slist, M, T, thetalist0, eomg, ev):
     """
     thetalist = np.array(thetalist0).copy()
     i = 0
-    maxiterations = 20
+    maxiterations = 1000
     Tsb = FKinSpace(M, Slist, thetalist)
     Vs = np.dot(Adjoint(Tsb),
                 se3ToVec(MatrixLog6(np.dot(TransInv(Tsb), T))))
@@ -1296,7 +1296,7 @@ def InverseDynamicsTrajectory(thetamat, dthetamat, ddthetamat, g,
     Example Inputs (3 Link Robot):
         from __future__ import print_function
         import numpy as np
-        import modern_robotics as mr
+        import modern_robotics_plus as mr
         # Create a trajectory to follow using functions from Chapter 9
         thetastart =  np.array([0, 0, 0])
         thetaend =  np.array([np.pi / 2, np.pi / 2, np.pi / 2])
@@ -1407,7 +1407,7 @@ def ForwardDynamicsTrajectory(thetalist, dthetalist, taumat, g, Ftipmat,
     Example Inputs (3 Link Robot):
         from __future__ import print_function
         import numpy as np
-        import modern_robotics as mr
+        import modern_robotics_plus as mr
         thetalist = np.array([0.1, 0.1, 0.1])
         dthetalist = np.array([0.1, 0.2, 0.3])
         taumat = np.array([[3.63, -6.58, -5.57], [3.74, -5.55,  -5.5],
@@ -1548,7 +1548,7 @@ def TrapezoidalTimeScaling(Tf, t, v, a):
             return (2*a*v*Tf-2*v**2-a**2*(t-Tf)**2)/(2*a)
     else:
         # 两相曲线
-        if t<= 0.5*Tf:
+        if t <= 0.5*Tf:
             return 0.5*a*t**2
         else:
             return 1-a*(Tf-t)**2/2
@@ -1587,70 +1587,11 @@ def JointTrajectory(thetastart, thetaend, Tf, N, method, v=None, a=None):
     N = int(N)
     timegap = Tf / (N - 1.0)
     traj = np.zeros((len(thetastart), N))
-    if method == "t":
-        if v**2 <= a:
-            Tf = (a+v**2)/(a*v) # 三相曲线
-        else:
-            Tf = (4/a)**0.5 # 两相曲线
-            
     for i in range(N):
         if method == 3:
             s = CubicTimeScaling(Tf, timegap * i)
         elif method == 5:
             s = QuinticTimeScaling(Tf, timegap * i)
-        elif method == "t":
-            s = TrapezoidalTimeScaling(Tf, timegap * i, v, a)
-        traj[:, i] = s * np.array(thetaend) + (1 - s) * np.array(thetastart)
-    traj = np.array(traj).T
-    return traj
-
-
-def JointTrajectoryPlus(thetastart, thetaend, method, v, a, interval=0.01):
-    """Computes a straight-line trajectory in joint space
-
-    :param thetastart: The initial joint variables
-    :param thetaend: The final joint variables
-    :param Tf: Total time of the motion in seconds from rest to rest
-    :param N: The number of points N > 1 (Start and stop) in the discrete
-              representation of the trajectory
-    :param method: The time-scaling method, where 3 indicates cubic (third-
-                   order polynomial) time scaling and 5 indicates quintic
-                   (fifth-order polynomial) time scaling
-    :return: A trajectory as an N x n matrix, where each row is an n-vector
-             of joint variables at an instant in time. The first row is
-             thetastart and the Nth row is thetaend . The elapsed time
-             between each row is Tf / (N - 1)
-
-    Example Input:
-        thetastart = np.array([1, 0, 0, 1, 1, 0.2, 0,1])
-        thetaend = np.array([1.2, 0.5, 0.6, 1.1, 2, 2, 0.9, 1])
-        Tf = 4
-        N = 6
-        method = 3
-    Output:
-        np.array([[     1,     0,      0,      1,     1,    0.2,      0, 1]
-                  [1.0208, 0.052, 0.0624, 1.0104, 1.104, 0.3872, 0.0936, 1]
-                  [1.0704, 0.176, 0.2112, 1.0352, 1.352, 0.8336, 0.3168, 1]
-                  [1.1296, 0.324, 0.3888, 1.0648, 1.648, 1.3664, 0.5832, 1]
-                  [1.1792, 0.448, 0.5376, 1.0896, 1.896, 1.8128, 0.8064, 1]
-                  [   1.2,   0.5,    0.6,    1.1,     2,      2,    0.9, 1]])
-    """
-    N = int(N)
-    timegap = Tf / (N - 1.0)
-    traj = np.zeros((len(thetastart), N))
-    if method == "t":
-        if v**2 <= a:
-            Tf = (a+v**2)/(a*v) # 三相曲线
-        else:
-            Tf = (4/a)**0.5 # 两相曲线
-            
-    for i in range(N):
-        if method == 3:
-            s = CubicTimeScaling(Tf, timegap * i)
-        elif method == 5:
-            s = QuinticTimeScaling(Tf, timegap * i)
-        elif method == "t":
-            s = TrapezoidalTimeScaling(Tf, timegap * i, v, a)
         traj[:, i] = s * np.array(thetaend) + (1 - s) * np.array(thetastart)
     traj = np.array(traj).T
     return traj
@@ -1782,6 +1723,109 @@ def CartesianTrajectory(Xstart, Xend, Tf, N, method):
     return traj
 
 
+def Matrix3Distance(Rstart, Rend):
+    SO3 = RotInv(Rstart)@Rend
+    so3 = MatrixLog3(SO3)
+    vec = so3ToVec(so3)
+    return AxisAng3(vec)[1]
+
+
+def BaseTrajectory(delta, vel_max, acc_max, method, interval):
+    vel_max, acc_max = np.array(vel_max), np.array(acc_max)
+    freedom = delta.shape[0]
+    # 计算运行时间
+    if method == "3":
+        time_max_vel = 1.5*delta/vel_max
+        time_max_acc = np.sqrt(6*delta/acc_max)
+        max_time = np.max([np.max(time_max_vel), np.max(time_max_acc)])
+        max_time = np.ceil(max_time / interval) * interval
+        node_num = int(max_time/interval)+1
+    elif method == "5":
+        time_max_vel = 15*delta/(8*vel_max)
+        time_max_acc = np.sqrt(10*delta/(3**0.5*acc_max))
+        max_time = np.max([np.max(time_max_vel), np.max(time_max_acc)])
+        max_time = np.ceil(max_time / interval) * interval
+        node_num = int(max_time/interval)+1
+    elif method == "t":
+        # 梯形速度规划
+        max_time = 0
+        for i in range(freedom):
+            # 遍历每个关节
+            if delta[i] < 1e-6:
+                # 如果关节角度变化量过小，则跳过
+                continue
+            # 计算加速度和速度的缩放因子
+            temp_a = acc_max[i]/delta[i]
+            temp_v = vel_max[i]/delta[i]
+            if temp_v**2 <= temp_a:
+                temp_max_time = (temp_a+temp_v**2)/(temp_a*temp_v)
+            else:
+                temp_max_time = (4/temp_a)**0.5
+            # 找到最大耗时关节对应的时间、加速度和速度缩放因子
+            if temp_max_time > max_time:
+                max_time = temp_max_time
+                acc_scale = temp_a
+                vel_scale = temp_v
+        # 对最长时间进行向上取整，并且根据需要重新计算速度缩放因子
+        max_time = np.ceil(max_time / interval) * interval
+        if acc_scale*max_time**2 >= 4:
+            vel_scale = 0.5*(acc_scale*max_time-acc_scale **
+                             0.5*(acc_scale*max_time**2-4)**0.5)
+        # 计算关节轨迹的节点数，并使用梯形速度进行轨迹规划
+        node_num = int(max_time/interval)+1
+    node_num = int(node_num)
+    s_list = []
+    for i in range(node_num):
+        if method in [3, "3"]:
+            s = CubicTimeScaling(max_time, interval * i)
+        elif method in [5, "5"]:
+            s = QuinticTimeScaling(max_time, interval * i)
+        elif method == "t":
+            s = TrapezoidalTimeScaling(
+                max_time, interval * i, vel_scale, acc_scale)
+        s_list.append(s)
+    time_list = np.linspace(0, max_time, node_num)
+    return s_list, time_list
+
+def JointTrajectoryPlus(joint_start, joint_end, vel_max, acc_max, method, interval):
+    joint_start, joint_end = np.array(joint_start), np.array(joint_end)
+    vel_max, acc_max = np.array(vel_max), np.array(acc_max)
+    freedom = joint_start.shape[0]
+    delta_joint = joint_end - joint_start
+    # 计算运行时间
+    s_list, time_list = BaseTrajectory(delta_joint, vel_max, acc_max, method, interval)
+    node_num = len(time_list)
+    traj = np.zeros((freedom, node_num))
+    for i in range(node_num):
+        s = s_list[i]
+        traj[:, i] = s * np.array(joint_end) + (1 - s) * np.array(joint_start)
+    traj = np.array(traj).T
+    return traj, time_list
+
+
+def CartesianTrajectoryPlus(Xstart, Xend, vel_max, acc_max, method, interval):
+    Rstart, pstart = TransToRp(Xstart)
+    Rend, pend = TransToRp(Xend)
+    delta_cartesian = np.zeros(2)
+    delta_cartesian[0] = np.linalg.norm(pend-pstart)
+    delta_cartesian[1] = Matrix3Distance(Rstart, Rend)
+    s_list, time_list = BaseTrajectory(
+        delta_cartesian, vel_max, acc_max, method, interval)
+    node_num = len(time_list)
+    traj = [[None]] * node_num
+    delta_traj = np.zeros((node_num, 2))
+    for i in range(node_num):
+        s = s_list[i]
+        traj[i] \
+            = np.r_[np.c_[np.dot(
+                Rstart,
+                MatrixExp3(MatrixLog3(np.dot(np.array(Rstart).T, Rend)) * s)),
+                s * np.array(pend) + (1 - s) * np.array(pstart)],
+            [[0, 0, 0, 1]]]
+        delta_traj[i, :] = delta_cartesian*s
+    return traj, delta_traj, time_list
+
+
 '''
 *** CHAPTER 11: ROBOT CONTROL ***
 '''
@@ -1899,7 +1943,7 @@ def SimulateControl(thetalist, dthetalist, g, Ftipmat, Mlist, Glist,
     Example Input:
         from __future__ import print_function
         import numpy as np
-        from modern_robotics import JointTrajectory
+        from modern_robotics_plus import JointTrajectory
         thetalist = np.array([0.1, 0.1, 0.1])
         dthetalist = np.array([0.1, 0.2, 0.3])
         # Initialize robot description (Example with 3 links)

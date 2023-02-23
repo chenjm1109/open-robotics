@@ -176,7 +176,7 @@ def update_robot_pose(dh_list, joint, ax):
     ax.set_aspect('equal', 'box')
 
 
-def plot_traj_curve(joint_traj:np.ndarray, time_list:np.ndarray):
+def plot_joint_traj_curve(joint_traj:np.ndarray, time_list:np.ndarray):
     freedom = joint_traj.shape[1]
     # 计算速度和加速度
     velocity = np.diff(joint_traj, axis=0) / np.diff(time_list)[:, None]
@@ -208,3 +208,71 @@ def plot_traj_curve(joint_traj:np.ndarray, time_list:np.ndarray):
     fig.tight_layout()
     plt.show()
 
+
+def plot_point_traj_curve(point_traj:np.ndarray, delta_traj:np.ndarray, time_list:np.ndarray):
+    # 计算速度和加速度
+    velocity = np.diff(point_traj, axis=0) / np.diff(time_list)[:, None]
+    acceleration = np.diff(velocity, axis=0) / \
+        np.diff(time_list[:-1])[:, None]
+    
+    delta_velocity = np.diff(delta_traj, axis=0) / np.diff(time_list)[:, None]
+    delta_acceleration = np.diff(delta_velocity, axis=0) / \
+        np.diff(time_list[:-1])[:, None]
+
+    # 绘制坐标、速度和加速度曲线
+    fig, axs = plt.subplots(3, 4, figsize=(16, 8))
+    label_cart = ['x', 'y', 'z']
+    for i in range(3):
+        axs[0][0].plot(time_list, point_traj[:, i], label=f"p{label_cart[i]}")
+        axs[1][0].plot(time_list[:-1], velocity[:, i],
+                    label=f"v{label_cart[i]}")
+        axs[2][0].plot(time_list[:-2], acceleration[:, i],
+                    label=f"a{label_cart[i]}")
+        
+        axs[0][1].plot(time_list, delta_traj[:, 0], label=f"pos")
+        axs[1][1].plot(time_list[:-1], delta_velocity[:, 0],
+                    label=f"vel")
+        axs[2][1].plot(time_list[:-2], delta_acceleration[:, 0],
+                    label=f"acc")
+        
+        axs[0][2].plot(time_list, point_traj[:, i+3], label=f"rp{label_cart[i]}")
+        axs[1][2].plot(time_list[:-1], velocity[:, i+3],
+                    label=f"rv{label_cart[i]}")
+        axs[2][2].plot(time_list[:-2], acceleration[:, i+3],
+                    label=f"ra{label_cart[i]}")
+        
+        axs[0][3].plot(time_list, delta_traj[:, 1], label=f"rpos")
+        axs[1][3].plot(time_list[:-1], delta_velocity[:, 1],
+                    label=f"rvel")
+        axs[2][3].plot(time_list[:-2], delta_acceleration[:, 1],
+                    label=f"racc")
+    
+    
+
+
+    label_list = [["笛卡尔位置", "路径位置", "欧拉角位置", "路径角位置"],
+                  ["笛卡尔速度", "路径速度", "欧拉角速度", "路径角速度"],
+                  ["笛卡尔加速度", "路径加速度", "欧拉角加速度", "路径角加速度"]]
+    
+    for i in range(4):
+        axs[2][i].set_xlabel("时间(s)")
+        
+        for j in range(3):
+            axs[j][i].set_ylabel(''.join([c + '\n' for c in label_list[j][i]]), 
+                         rotation=0,
+                         position=(0, 0))
+            axs[j][i].yaxis.set_label_coords(-0.13, 0.2)
+            axs[j][i].legend()
+            axs[j][i].grid()
+    # axs[1].set_xlabel("时间(s)")
+    # axs[1].set_ylabel("关节速度")
+    # axs[1].legend(loc='upper left', bbox_to_anchor=(1.0, 1.0))
+    # axs[1].grid()
+    # axs[2].set_xlabel("时间(s)")
+    # axs[2].set_ylabel("关节加速度")
+    # axs[2].legend(loc='upper left', bbox_to_anchor=(1.0, 1.0))
+    # axs[2].grid()
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0.2, wspace=0.2)
+    
+    plt.show()
