@@ -1751,12 +1751,13 @@ def BaseTrajectory(delta, vel_max, acc_max, method, interval):
         max_time = 0
         for i in range(freedom):
             # 遍历每个关节
-            if delta[i] < 1e-6:
+            abs_delta = abs(delta[i])
+            if abs_delta < 1e-6:
                 # 如果关节角度变化量过小，则跳过
                 continue
             # 计算加速度和速度的缩放因子
-            temp_a = acc_max[i]/delta[i]
-            temp_v = vel_max[i]/delta[i]
+            temp_a = acc_max[i]/abs_delta
+            temp_v = vel_max[i]/abs_delta
             if temp_v**2 <= temp_a:
                 temp_max_time = (temp_a+temp_v**2)/(temp_a*temp_v)
             else:
@@ -1800,7 +1801,7 @@ def JointTrajectoryPlus(joint_start, joint_end, vel_max, acc_max, method, interv
         s = s_list[i]
         traj[:, i] = s * np.array(joint_end) + (1 - s) * np.array(joint_start)
     traj = np.array(traj).T
-    return traj, time_list
+    return np.concatenate([time_list.reshape(-1, 1), traj], axis=1)
 
 
 def CartesianTrajectoryPlus(Xstart, Xend, vel_max, acc_max, method, interval):

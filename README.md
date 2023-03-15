@@ -16,6 +16,13 @@
 
 ## 快速使用
 
+## 打包安装
+
+```python
+python setup.py sdist
+pip install ./dist/open_robotics-1.0.0.tar
+```
+
 创建机器人实例。详细用法请查看[创建机器人的多种方法](#创建机器人的多种方法)。
 
 ```python
